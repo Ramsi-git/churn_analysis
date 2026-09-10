@@ -177,7 +177,7 @@ streamlit run streamlit_app.py
 ## ⚠️ Important Notes
 
 1. **Data Privacy**: The dataset is real IBM Telco data. All analysis is academic/demonstration.
-2. **LLM Calls**: Requires OpenAI API key. Estimated cost: ~$0.10-0.50 for full analysis.
+2. **LLM Calls**: GenAI advisory execution requires an assignment-approved LLM provider or local generative model. No API credentials are stored in this repository.
 3. **Generalization**: Train-test split is 80/20. Monitor accuracy gap for overfitting.
 4. **Non-Discrimination**: Protected demographic/family variables are not used as causal explanations or retention reasons. The LLM prompt and output validation prevent demographic attributes from being used in retention explanations.
 
