@@ -17,8 +17,6 @@ The selected churn model identifies customers who need retention attention while
 
 ## KPI Snapshot
 
-Populate these values from the executed outputs in `notebooks/01_analysis.ipynb`:
-
 | Measure | Result |
 |---|---:|
 | Total customers | 7,043 |
@@ -27,6 +25,8 @@ Populate these values from the executed outputs in `notebooks/01_analysis.ipynb`
 | One-year contract churn rate | 11.27% |
 | Two-year contract churn rate | 2.83%  | 
 Tenure-churn correlation | 	-0.352 | 
+
+
 Contract type is an observed association, not proof that contract length causes retention. Customers self-select into contract types based on commitment, satisfaction, pricing, and other circumstances. Retention actions should therefore use contract type as a predictive signal rather than assuming that moving customers to longer contracts will itself prevent churn.
 
 ## Model and Campaign Recommendation
