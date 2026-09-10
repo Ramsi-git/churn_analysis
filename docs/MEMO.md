@@ -7,7 +7,11 @@
 
 ## Executive Summary
 
-The analysis combines exploratory analysis, churn prediction, customer segmentation, and a governance-controlled retention advisor. The model is designed to prioritize customers for retention outreach; it is not a causal model and should not be used to force customers into longer contracts.
+The analysis evaluates customer churn using IBM's Telco dataset and combines exploratory analysis, predictive modelling, customer segmentation, and a governance-aware retention advisory design.
+
+The overall churn rate is 26.54%. The analysis identifies new, high-spend, high-risk customers as the recommended first retention campaign because this segment has an average predicted churn risk of 76.40% and approximately $127,734.69 in expected monthly revenue at risk.
+
+The model is predictive rather than causal. Contract type and other model signals should therefore be treated as associations and prioritization signals, not proof that changing a customer's contract will cause them to remain.
 
 **Headline:** The selected churn model identifies customers who need retention attention while excluding protected demographic attributes from model features and LLM context.
 
@@ -17,35 +21,39 @@ Populate these values from the executed outputs in `notebooks/01_analysis.ipynb`
 
 | Measure | Result |
 |---|---:|
-| Total customers | `[run notebook]` |
-| Overall churn rate | `[run notebook]` |
-| Month-to-month churn rate | `[run notebook]` |
-| One-year contract churn rate | `[run notebook]` |
-| Two-year contract churn rate | `[run notebook]` |
-
-Contract type is an observed association, not proof that contract length causes retention. Customers self-select into contracts based on commitment, satisfaction, and circumstances. Retention action should therefore focus on service experience, tenure, pricing, and engagement signals rather than simply moving customers to annual contracts.
+| Total customers | 7,043 |
+| Overall churn rate | 26.54% |
+| Month-to-month churn rate | 42.71% |
+| One-year contract churn rate | 11.27% |
+| Two-year contract churn rate | 2.83%  | 
+Tenure-churn correlation | 	-0.352 | 
+Contract type is an observed association, not proof that contract length causes retention. Customers self-select into contract types based on commitment, satisfaction, pricing, and other circumstances. Retention actions should therefore use contract type as a predictive signal rather than assuming that moving customers to longer contracts will itself prevent churn.
 
 ## Model and Campaign Recommendation
 
-The pipeline cleans `TotalCharges`, encodes permitted service and contract variables, excludes `gender`, `SeniorCitizen`, `Partner`, and `Dependents`, and compares logistic regression, random forest, and gradient boosting. The best model is selected by test ROC-AUC, with recall treated as a critical operational metric because missed churners represent lost intervention opportunities.
+The modelling pipeline cleans TotalCharges, applies preprocessing using the training data, compares Logistic Regression and Random Forest, and evaluates accuracy, recall, precision, F1, and ROC-AUC.
 
-| Measure | Result |
+Random Forest was selected using 5-fold training cross-validation F1, rather than selecting the model from the test set.
+
+| Measure | Random Forest |
 |---|---:|
-| Selected model | `[run notebook]` |
-| Test accuracy | `[run notebook]` |
-| Test recall | `[run notebook]` |
-| Test ROC-AUC | `[run notebook]` |
-| Train-test accuracy gap | `[run notebook]` |
+| Test accuracy | 76.15% |
+| Test recall	| 71.12% |
+| Test precision | 53.85% |
+| Test F1|	61.29% |
+| Test ROC-AUC	|0.832 |
+| Train accuracy|	91.14% |
+| Train-test accuracy gap	| 14.99 percentage points |
 
-The first retention campaign should target the segment with the strongest combination of churn risk, population size, and revenue at risk. Complete the segment table from the notebook before launch:
+The 14.99 percentage-point train-test accuracy gap indicates a meaningful generalization risk and should be monitored before production deployment.
 
-| Segment | Business profile | Customers | Avg. churn risk | Revenue at risk |
-|---:|---|---:|---:|---:|
-| 0 | `[run notebook]` | `[run notebook]` | `[run notebook]` | `[run notebook]` |
-| 1 | `[run notebook]` | `[run notebook]` | `[run notebook]` | `[run notebook]` |
-| 2 | `[run notebook]` | `[run notebook]` | `[run notebook]` | `[run notebook]` |
+| Segment	| Business profile	| Customers	| Avg. tenure	| Avg. monthly charges	|Avg. churn risk	| Revenue at risk |
+| 0	| New, high-spend, high-risk	| 2,111	| 13.6 mo	| $79.14	| 76.40%	| $127,734.69 |
+| 1	| Established, high-spend, low-risk	| 1,995	56.4 mo	| $92.48	| 22.89%	| $43,540.39 |
+| 2	| New, low-spend, high-risk	| 1,729	12.5 mo	| $36.10	| 26.86%	| $17,097.02 |
+| 3	| Established, low-spend, low-risk	| 1,208	| 54.1 mo	| $34.89	| 6.65%	| $3,352.68 |
 
-**Recommended target:** Segment `[run notebook]`, because it offers the best expected retention value after balancing risk, reachable volume, and customer value.
+Recommended target: Segment 0 - New, high-spend, high-risk
 
 ## Retention Advisory
 
