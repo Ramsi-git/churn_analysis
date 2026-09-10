@@ -13,7 +13,7 @@ The overall churn rate is 26.54%. The analysis identifies new, high-spend, high-
 
 The model is predictive rather than causal. Contract type and other model signals should therefore be treated as associations and prioritization signals, not proof that changing a customer's contract will cause them to remain.
 
-**Headline:** The selected churn model identifies customers who need retention attention while excluding protected demographic attributes from model features and LLM context.
+The selected churn model identifies customers who need retention attention while the GenAI advisory layer is designed to keep explanations grounded in approved inputs and free from protected demographic/family attributes.
 
 ## KPI Snapshot
 
@@ -54,45 +54,56 @@ The 14.99 percentage-point train-test accuracy gap indicates a meaningful genera
 | 3	| Established, low-spend, low-risk	| 1,208	| 54.1 mo	| $34.89	| 6.65%	| $3,352.68 |
 
 Recommended target: Segment 0 - New, high-spend, high-risk
+This segment combines high predicted churn risk with the largest expected monthly revenue at risk, making it the strongest starting point for a targeted retention campaign.
+
+Global Model Signals
+
+The Random Forest's top three global feature-importance signals are:
+
+Tenure — prioritize customers during their first 12 months for proactive retention check-ins and an annual-contract offer before renewal.
+TotalCharges — prioritize high-value customers for tailored loyalty outreach and retention offers.
+Month-to-month contract — offer eligible customers a time-limited annual-contract discount or fee waiver.
+
+These are global predictive signals, not customer-specific causal explanations.
 
 ## Retention Advisory
 
 The advisor retrieves one approved playbook clause before generating an explanation:
 
-- **Clause 1:** Risk probability at least 0.70: loyalty discount and a retention callback within 48 hours.
-- **Clause 2:** Risk probability from 0.40 to below 0.70: targeted email with an underused-service or upgrade offer.
-- **Clause 3:** Tenure below three months: route to onboarding, regardless of risk tier.
-- **Clause 4:** Explanations must not state or imply that protected demographics contributed to risk.
-
+Clause 1: Risk probability at least 0.70: loyalty discount and a retention callback within 48 hours.
+Clause 2: Risk probability from 0.40 to below 0.70: targeted email with an underused-service or upgrade offer.
+Clause 3: Tenure below three months: route to onboarding, regardless of risk tier.
+Clause 4: Explanations must not state or imply that protected demographics contributed to risk.
 Retrieval is mandatory. Without the playbook, an LLM may guess a clause or invent an explanation. In this setting, that can cause the wrong customer action, create compliance exposure, and damage the audit trail.
 
 ## Governance Evidence
 
-The implementation enforces Clause 4 in code:
+The GenAI advisory layer is designed to enforce Clause 4 through controlled inputs and output validation.
 
-1. Protected columns are excluded before model training.
-2. The LLM receives only customer ID, risk probability, tenure, top feature names, and the retrieved clause.
-3. Raw demographic values and full customer rows are not passed to the LLM.
-4. Generated text is checked for prohibited demographic references before it is accepted.
-5. The retrieved clause and validation result can be retained as an audit record.
-
+1.The LLM receives only the risk probability, tenure, retrieved clause, and top three global feature-importance signal names.
+2.Customer IDs, raw demographic values, and full customer rows are not passed to the LLM.
+3.The prompt explicitly prohibits demographic/family attributes from being used as explanations or retention reasons.
+4.Generated text is checked for prohibited demographic references before it is accepted when an approved LLM provider is available.
+5.The retrieved clause, permitted inputs, generated response, and validation result can be retained as an audit record.
 The compliance claim for production should be supported by logs showing the input-field allowlist, retrieved clause, validator result, and any rejected output.
 
-## Monitoring and Cost Control
+Monitoring and Cost Control
 
-**Primary monitoring signal:** Track the difference between predicted and observed churn rates by segment each month. Investigate and retrain when the gap exceeds the agreed threshold, such as five percentage points, or when recall declines materially.
+Primary monitoring signal: Track the difference between predicted and observed churn rates by segment each month. Investigate potential model drift and consider retraining when the gap exceeds an agreed threshold, such as five percentage points, or when recall declines materially.
 
-**Cost control:** Cache the approved playbook retrieval by risk tier and use the LLM only for the short, governance-safe explanation. Batch eligible requests and reserve the more capable model for cases that need escalation.
+Cost control: Cache the approved playbook retrieval by risk tier and use the LLM only for the short, governance-safe explanation. Batch eligible requests and use an approved lower-cost model for simple standardized cases where appropriate.
 
+Task 6 Execution Status
+
+The deterministic retrieval logic has been completed and identifies Clause 3 for the selected test customer because the customer's tenure is below three months, even though the predicted churn probability is approximately 99.22%.
+
+The actual grounded and ungrounded LLM calls remain pending assignment-approved LLM access. No LLM response has been fabricated.
 ## Required Completion Checklist
 
-- [ ] Run all notebook cells and copy the actual KPI values into this memo.
-- [ ] Record model accuracy, recall, ROC-AUC, and train-test gap.
-- [ ] Copy the segment profiles and select the campaign target.
-- [ ] Record the test customer's retrieved clause and risk factors.
-- [ ] Save the generated explanation and validator result for the audit trail.
-- [ ] Review the completed memo for unsupported causal claims before distribution.
-
+- [ ] Execute the grounded LLM call using an assignment-approved provider.
+- [ ] Execute the ungrounded comparison call using the same approved provider.
+- [ ] Record the exact LLM responses and validator result.
+- [ ] Perform final memo review after Task 6 execution.
 ## Source Files
 
 - [Notebook analysis](../notebooks/01_analysis.ipynb)
