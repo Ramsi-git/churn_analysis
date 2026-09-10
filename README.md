@@ -116,13 +116,13 @@ Recommended for first retention campaign: New, high-spend, high-risk. This segme
 
 ### Non-Discrimination (Clause 4)
 - ✓  Protected demographic/family variables are not used in LLM explanations or retention recommendations
-- ✓ LLM receives only: risk_probability, tenure_months, top_3_feature_names
+- ✓ LLM receives only: risk_probability, tenure_months, retrieved_clause, and top_3_feature_names
 - ✓ LLM prompted to forbid demographic mentions
 - ✓ Validator is designed to check LLM output for compliance when an approved provider is available
 ### Audit Trail
 The planned customer explanation includes:
 - Risk probability (numeric, defensible)
-- Top 3 business drivers (service/contract/engagement, not demographics)
+- Top 3 global model feature-importance signals (non-demographic retention signals)
 - Retrieved clause (approved, standardized text)
 - LLM explanation (grounded in above, validated)
 
@@ -179,10 +179,10 @@ streamlit run streamlit_app.py
 ## 🎓 Learning Outcomes
 
 After completing this project, you will understand:
-- End-to-end ML pipeline: EDA → Modeling → Deployment
+- End-to-end ML pipeline: EDA → Modeling → Segmentation → Advisory design
 - How to handle minority class imbalance (high recall = catch churners)
 - RAG without vector DB (simple rule-based retrieval is often sufficient)
-- Governance in practice (demographic exclusion, output validation)
+- Protected demographic/family variables are not used as causal explanations or retention reasons.
 - How to communicate data science to executives (metrics, trade-offs, risks)
 
 ## 📞 Questions?
