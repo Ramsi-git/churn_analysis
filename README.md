@@ -63,15 +63,11 @@ churn_analysis/
 pip install -r requirements.txt
 ```
 
-### 2. Set OpenAI API Key
-```bash
-# Windows PowerShell
-$env:OPENAI_API_KEY = "sk-your-key-here"
+### 2. Configure an Assignment-Approved LLM Provider
 
-# Or add to .env file (install python-dotenv)
-echo "OPENAI_API_KEY=sk-your-key-here" > .env
-```
+Task 6 requires an assignment-approved generative LLM provider. Configure the provider credential securely through an environment variable or approved local runtime. Do not hard-code or commit credentials to the repository.
 
+If no approved LLM provider is available, the analysis, modelling, retrieval logic, prompt design, and governance controls can still be reviewed, but the final LLM execution remains pending.
 ### 3. Run the Analysis
 Open `notebooks/01_analysis.ipynb` in Jupyter and run cells in order.
 
@@ -122,8 +118,7 @@ Recommended for first retention campaign: New, high-spend, high-risk. This segme
 - ✓  Protected demographic/family variables are not used in LLM explanations or retention recommendations
 - ✓ LLM receives only: risk_probability, tenure_months, top_3_feature_names
 - ✓ LLM prompted to forbid demographic mentions
-- ✓ Validator checks LLM output for compliance
-
+- ✓ Validator is designed to check LLM output for compliance when an approved provider is available
 ### Audit Trail
 The planned customer explanation includes:
 - Risk probability (numeric, defensible)
