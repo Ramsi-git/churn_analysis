@@ -1,417 +1,384 @@
-# Churn Analysis: Technical Notes & Findings
-## Complete Documentation for Memo & Board Presentation
+# Customer Churn Analysis — Detailed Findings
+
+## Purpose
+
+This document records the analysis results, modelling decisions, customer segmentation, retention strategy, and governance controls for the telecom customer churn project.
+
+The analysis uses IBM's Telco Customer Churn dataset and covers exploratory analysis, data preparation, predictive modelling, feature-importance analysis, customer segmentation, and a governance-aware retention advisory.
 
 ---
 
-## PART 1: BUSINESS FRAMING & EXPLORATORY ANALYSIS
+# Part 1 — Exploratory Churn Analysis
 
-### Overall Churn Rate (KPI)
-**Your number here:** _____ %
+## Dataset Overview
 
-Record from notebook output:
-```
-Total Customers: [number]
-Churned Customers: [number]
-Retained Customers: [number]
-Overall Churn Rate: [percentage]%
-```
+* Dataset: IBM Telco Customer Churn
+* Total customers: **7,043**
+* Target variable: **Churn**
+* Overall churn rate: **26.54%**
+* Customer identifier: `customerID`
 
-### Churn Rate by Contract Type
-**Record your own numbers:**
+## Churn by Contract Type
 
-| Contract Type | Churn Rate | Count | Churned |
-|---|---|---|---|
-| Month-to-month | ___% | ___ | ___ |
-| One year | ___% | ___ | ___ |
-| Two year | ___% | ___ | ___ |
+| Contract type  | Churn rate |
+| -------------- | ---------: |
+| Month-to-month |     42.71% |
+| One year       |     11.27% |
+| Two year       |      2.83% |
 
-### Churn Rate by Internet Service Type
-**Record your own numbers:**
+Month-to-month customers have substantially higher observed churn than customers on one-year or two-year contracts.
 
-| Service Type | Churn Rate | Count |
-|---|---|---|
-| ___ | ___% | ___ |
-| ___ | ___% | ___ |
-| ___ | ___% | ___ |
+This is an observed association rather than proof of causation. Customers may self-select into contract types based on commitment, satisfaction, pricing, tenure, and other circumstances.
 
-### Analytical Question: Contract Correlation vs. Causation
+## Churn by Internet Service
 
-**Your answer in one paragraph:**
+| Internet service    | Churn rate |
+| ------------------- | ---------: |
+| Fiber optic         |     41.89% |
+| DSL                 |     18.96% |
+| No internet service |      7.40% |
 
-[Your paragraph here - explain why month-to-month churn is high due to self-selection, not causation]
+Fiber-optic customers show the highest observed churn rate among the three InternetService groups.
 
-Key points to cover:
-- Selection bias: Who self-selects into month-to-month vs. annual?
-- Causation fallacy: Why forcing annual contracts won't replicate the effect
-- Underlying drivers: What the real retention levers are
+## Tenure and Churn
+
+The Pearson correlation between tenure and churn is:
+
+**-0.352**
+
+The negative correlation indicates that customers with longer tenure tend to have lower churn in this dataset. This is an association and should not be interpreted as proof that increasing tenure directly causes lower churn.
 
 ---
 
-## PART 2: PREDICTIVE MODELLING
+# Part 2 — Data Preparation
 
-### TotalCharges Fix
+## Cleaning
 
-**What was broken:**
-- TotalCharges stored as string with blank values for new customers
+The `TotalCharges` column contained **11 blank values**.
 
-**How you fixed it:**
-- Identified [number] rows with missing TotalCharges
-- These were customers with very low tenure
-- Calculated: TotalCharges = tenure_months * MonthlyCharges
+Investigation showed that these records corresponded to customers with zero tenure. The blank `TotalCharges` values were therefore converted to **0.0** rather than dropping those customers.
 
-**Code location:** 
-`notebooks/01_analysis.ipynb` → Cell "2.3 Fix TotalCharges"
+* Blank `TotalCharges`: **11**
+* Rows dropped: **0**
 
----
+## Feature Preparation
 
-### Model Performance Comparison
+The `customerID` field was removed from model features because it is an identifier rather than a useful predictive feature.
 
-**Best model selected:** _______________
+The target variable `Churn` was separated from the input features.
 
-| Metric | Logistic Regression | Random Forest | Gradient Boosting |
-|---|---|---|---|
-| Train Accuracy | ___% | ___% | ___% |
-| Test Accuracy | ___% | ___% | ___% |
-| Test Recall | ___% | ___% | ___% |
-| Test ROC-AUC | ____ | ____ | ____ |
+Numeric variables included:
 
-**Why [best model] was chosen:**
-- [Your reasoning]
+* `SeniorCitizen`
+* `tenure`
+* `MonthlyCharges`
+* `TotalCharges`
 
-### Analytical Question A: Accuracy vs. Recall
+Categorical variables were encoded using one-hot encoding.
 
-**Your churn rate (minority class):** ____%
+Numeric features were standardized as part of the preprocessing pipeline.
 
-**Naive baseline (always predict "No Churn"):**
-- Accuracy: ____% ← Misleading!
-- Recall: ____% ← Catches no churners
+## Leakage Control
 
-**Your best model:**
-- Accuracy: ____% 
-- Recall: ____% ← Catches ____% of actual churners
+The preprocessing pipeline was fitted using the training data only and then applied to the test data.
 
-**Explanation for the CFO (1-2 paragraphs):**
-
-[Write here why accuracy alone is misleading; what recall means in business terms]
-
-Key insight: 
-- High accuracy = large majority class dominates the metric
-- Recall = percentage of actual churners your system identifies
-- If recall is 60%, you miss 40% of people about to leave
-- That's the real cost to the business
-
-### Analytical Question B: Train vs. Test Accuracy
-
-**Your numbers:**
-- Training Accuracy: _____%
-- Test Accuracy: _____%
-- Overfitting Gap: _____%
-
-**Gap Analysis:**
-
-IF gap < 1%:
-"Our model generalizes excellently. The near-identical accuracy on held-out test data indicates the retention predictions will reliably apply to future customers we haven't seen before. Safe to defend to the board."
-
-IF gap 1-5%:
-"Model shows acceptable generalization with [gap]% train-test gap. We recommend quarterly retraining as customer behavior evolves. Performance is defensible."
-
-IF gap > 5%:
-"Model shows signs of overfitting with [gap]% train-test gap. We should simplify the model (reduce features/depth) before deployment. Current predictions may not generalize to new customers."
-
-**Your analysis:**
-
-[Fill in your conclusion]
+This prevents information from the test set from influencing preprocessing during model training.
 
 ---
 
-## PART 3: FEATURE IMPORTANCE & SEGMENTATION
+# Part 3 — Predictive Modelling
 
-### Top 3 Features
+## Models Compared
 
-Rank each and write the specific action a retention manager could take:
+Two classification models were evaluated:
 
-**Feature 1:** _______________
-- Importance score: ____
-- **Specific action:** [Write a concrete retention tactic, not "improve satisfaction"]
-  Example: "Offer customers with low MonthlyCommitment a bundle upgrade to 3-year contract"
+1. Logistic Regression
+2. Random Forest
 
-**Feature 2:** _______________
-- Importance score: ____
-- **Specific action:** [Concrete tactic]
+Model selection was based on **5-fold cross-validation F1 score on the training data**, rather than selecting a model using the test set.
 
-**Feature 3:** _______________
-- Importance score: ____
-- **Specific action:** [Concrete tactic]
+## Model Results
 
----
+### Random Forest
 
-### Customer Segments (K-Means Clustering)
+| Metric                  |                  Result |
+| ----------------------- | ----------------------: |
+| Test accuracy           |                  76.15% |
+| Test precision          |                  53.85% |
+| Test recall             |                  71.12% |
+| Test F1                 |                  61.29% |
+| Test ROC-AUC            |                   0.832 |
+| Train accuracy          |                  91.14% |
+| Train-test accuracy gap | 14.99 percentage points |
 
-**Number of clusters:** ___ (3 or 4)
+Confusion matrix:
 
-**Segment profiles:**
-
-| Segment | Name | Count | Avg Tenure (mo) | Avg Spend ($/mo) | Churn Risk | Revenue at Risk |
-|---|---|---|---|---|---|---|
-| 0 | ___ | ___ | ___ | ___ | ___% | $___ |
-| 1 | ___ | ___ | ___ | ___ | ___% | $___ |
-| 2 | ___ | ___ | ___ | ___ | ___% | $___ |
-| [3] | ___ | ___ | ___ | ___ | ___% | $___ |
-
-### Analytical Question: Which Segment to Target First?
-
-**Your recommendation:** Segment [#] - **[Name]**
-
-**Business case (1-2 paragraphs):**
-
-[Explain your recommendation by weighing:]
-- Revenue at risk (potential impact if saved)
-- Segment size (population to reach)
-- Churn risk (urgency)
-- Cost-benefit of campaign
-
-Example calculation: 
-"Segment 1 (High-spend new customers) has 800 customers at $85/month with 45% churn risk. If we save even 20% of them, we preserve $163k in annual revenue. This is the highest ROI per dollar spent on retention."
-
----
-
-## PART 4: GenAI ADVISORY LAYER & GOVERNANCE
-
-### Retention Playbook (Exact Text)
-
-```
-Clause 1 — High Risk (probability ≥ 0.70): Offer a loyalty discount and a callback 
-from a retention specialist within 48 hours.
-
-Clause 2 — Moderate Risk (0.40–0.70): Send a targeted email highlighting an underused 
-service or a contract upgrade offer.
-
-Clause 3 — New Customer, Any Risk, Tenure < 3 months: Route to the onboarding team 
-instead of the standard retention flow.
-
-Clause 4 — Non-Discrimination Rule: Retention explanations must never state or imply 
-that gender, senior-citizen status, or family/partner status contributed to a customer's risk 
-score, even where a statistical correlation exists in the data.
+```text
+[[807, 228],
+ [108, 266]]
 ```
 
-### Test Customer (High-Risk)
+### Logistic Regression
 
-**Customer ID:** _______________
-- Tenure: ___ months
-- Monthly Charges: $___
-- Total Charges: $___
-- Churn Risk: ____%
-- Internet Service: ___
-- Contract: ___
+| Metric        | Result |
+| ------------- | -----: |
+| Test accuracy | 80.62% |
+| Test F1       | 60.61% |
+| Test ROC-AUC  |  0.842 |
 
-**Top 3 Risk Factors (from feature importance):**
-1. _______________
-2. _______________
-3. _______________
+Logistic Regression achieved higher test accuracy and ROC-AUC, but Random Forest achieved the better F1 score used for model selection.
 
-**Applicable Clause (from retrieval logic):**
-Clause [#] - [Tier]
+## Model Selection
 
----
+Random Forest was selected because its **5-fold training cross-validation F1 score was approximately 62.78%**, compared with the Logistic Regression baseline.
 
-### Analytical Question A: Hallucination Without Retrieval
+The model was therefore selected using the predefined training cross-validation criterion rather than test-set performance.
 
-**Test setup:**
-- Called LLM WITHOUT providing the playbook text
-- Asked: "Which clause applies? (Clause 1, 2, 3, or 4)"
-- LLM had no grounding in official clauses
+## Generalization Risk
 
-**What the LLM said:**
-```
-[Paste exact LLM response here]
-```
+The Random Forest achieved 91.14% training accuracy compared with 76.15% test accuracy.
 
-**Expected answer:** Clause [#]
-**LLM gave:** Clause [#] or [Hallucination]
-**Correct?** Yes / No
+This represents a **14.99 percentage-point train-test accuracy gap**, indicating potential overfitting and a meaningful generalization risk.
 
-**Failure mode name:** CONTEXT COLLAPSE / CONFABULATION
-
-**Why this is worse in retention/compliance than casual chatbot:**
-
-[Write 2-3 paragraphs covering:]
-- Business risk: Wrong clause = wrong retention action
-- Compliance risk: Hallucination might violate Clause 4
-- Trust damage: System deemed unreliable
-- High stakes: Unlike casual Q&A, this affects real customers
-
-Example: "If the LLM hallucinated and mentioned 'female senior citizen' in explaining churn, we'd be in legal risk. Audit would find our system violated its own governance rule. This is not a 'oops' moment; it's a compliance failure."
+The model should therefore be monitored carefully before any production deployment.
 
 ---
 
-### Analytical Question B: Data Leakage Prevention
+# Part 4 — Feature Importance and Retention Strategy
 
-**Scenario:**
-You could have passed the customer's FULL data row into the LLM:
-```
-{
-  'customerID': '1234',
-  'tenure': 12,
-  'gender': 'Female',           ← PROBLEM
-  'SeniorCitizen': 1,           ← PROBLEM
-  'Partner': 'No',              ← PROBLEM
-  'Dependents': 'Yes',          ← PROBLEM
-  'churn_probability': 0.78,
-  ...
-}
-```
+## Global Model Signals
 
-**What could go wrong:**
+The top three Random Forest feature-importance signals are:
 
-[Write 2-3 paragraphs covering:]
-- Direct leakage: LLM sees demographics and uses them
-- Implicit leakage: LLM infers demographic patterns even if told not to use them
-- Prompt injection: Attacker alters prompt to ask for demographic explanations
-- Audit failure: Explanation correlates with demographics; you can't defend it
+| Rank | Feature                   | Importance |
+| ---- | ------------------------- | ---------: |
+| 1    | `tenure`                  |     0.1297 |
+| 2    | `TotalCharges`            |     0.1292 |
+| 3    | `Contract_Month-to-month` |     0.1078 |
 
-**What you actually did:**
+These are **global model feature-importance signals**, not customer-specific causal explanations.
 
-You passed ONLY:
-```
-{
-  'customer_id': '1234',
-  'risk_probability': 0.78,
-  'tenure': 12,
-  'top_features': ['Feature1', 'Feature2', 'Feature3'],  ← Names only, not values
-  'clause': 'Clause 1 - High Risk'
-}
-```
+## Recommended Actions
 
-**How this prevents leakage:**
+### 1. Tenure
 
-[Write 1 paragraph]
-- Demographics never entered the LLM context
-- Even if adversary tries, the data isn't there
-- Code is audit-ready
-- Compliance test: Pass ✓
+Prioritize customers during their first 12 months for proactive retention check-ins and consider an annual-contract offer before renewal.
+
+### 2. TotalCharges
+
+Prioritize high-value customers for tailored loyalty outreach and appropriate retention offers.
+
+### 3. Month-to-month Contract
+
+For eligible customers, consider a time-limited annual-contract discount or fee waiver.
+
+These recommendations are business actions based on predictive signals. They should not be interpreted as proof that changing a particular feature will cause a customer to remain.
 
 ---
 
-## PART 5: EXECUTIVE MEMO
+# Part 5 — Customer Segmentation
 
-### One-Page Memo (Required Deliverable)
+KMeans clustering was used to create four customer segments using:
 
-**From:** [Your name], Data Science Team  
-**To:** Board & CFO  
-**Date:** [Today's date]  
-**Subject:** Customer Churn Analysis: Predictive Model & Retention Strategy  
+* Tenure
+* MonthlyCharges
+* Predicted churn probability
 
----
+## Segment Results
 
-#### HEADLINE (One sentence CFO can repeat)
+| Segment | Business profile                  | Customers | Avg. tenure | Avg. monthly charges | Avg. churn risk | Revenue at risk |
+| ------- | --------------------------------- | --------: | ----------: | -------------------: | --------------: | --------------: |
+| 0       | New, high-spend, high-risk        |     2,111 |     13.6 mo |               $79.14 |          76.40% |     $127,734.69 |
+| 1       | Established, high-spend, low-risk |     1,995 |     56.4 mo |               $92.48 |          22.89% |      $43,540.39 |
+| 2       | New, low-spend, high-risk         |     1,729 |     12.5 mo |               $36.10 |          26.86% |      $17,097.02 |
+| 3       | Established, low-spend, low-risk  |     1,208 |     54.1 mo |               $34.89 |           6.65% |       $3,352.68 |
 
-[Write your headline here]
+## Recommended Campaign
 
-Example: "Our churn model identifies 73% of at-risk customers and recommends targeted interventions that could preserve $2.1M in annual revenue."
+**Segment 0 — New, high-spend, high-risk**
 
-#### Churn KPI & Baseline
+This segment is the recommended first retention campaign because it combines the highest average predicted churn risk with the largest expected monthly revenue at risk.
 
-[Fill in your overall churn rate and key breakdowns]
-
-#### Recommended Segment for Retention Campaign
-
-**Target:** Segment [#] - [Name]
-
-**Trade-off analysis:** [1-2 sentences weighing churn risk vs. revenue impact]
-
-Example: "While Segment 2 has the highest churn risk (48%), Segment 1 has lower risk (32%) but 3x the monthly spend ($85 vs. $28). We recommend Segment 1 first because saving 100 high-value customers nets more revenue than saving 300 budget customers at equal risk."
-
-#### Monitoring Signal (Post-Launch)
-
-[Name ONE concrete metric you would track to detect model decay]
-
-NOT: "Check accuracy periodically"  
-YES: "Track the gap between predicted churn rate and actual churn rate by segment, monthly. If gap widens > 5%, retrain the model with fresh data."
-
-#### Governance: Non-Discrimination Proof
-
-[One sentence describing how you would prove Clause 4 enforcement from logs]
-
-Example: "All generated explanations are validated against a compliance checker that flags demographic keywords; logs show 0 violations across 100% of explanations generated."
-
-#### Cost Control for High-Volume LLM Calls
-
-[One specific design change to reduce API cost without breaking citation guarantee]
-
-Example: "Cache the playbook clause retrieval (same for all high-risk tiers); only call LLM with the specific customer's top features. This reduces tokens per call by 60%."
+The campaign should focus on proactive retention outreach during the early customer lifecycle.
 
 ---
 
-### Extended Notes for Board Q&A
+# Part 6 — Governance-Aware Retention Advisory
 
-#### TotalCharges Fix (Your own words)
+## Retention Playbook
 
-Explain:
-- How you identified the problem
-- Why it mattered (for train-test validity)
-- How you fixed it
-- Why your fix is defensible
+The retention advisor uses deterministic rule-based retrieval before any LLM generation.
 
-[Write 1-2 paragraphs]
+### Clause 1
 
-#### Train vs. Test Accuracy Trade-Off
+**High Risk — probability ≥ 0.70**
 
-Explain:
-- Your gap percentage
-- What it means for generalization
-- Whether you'd defend this model to the board as-is, or simplify first
-- Why that increases/decreases confidence
+Offer a loyalty discount and a callback from a retention specialist within 48 hours.
 
-[Write 1-2 paragraphs]
+### Clause 2
 
-#### What Happened When You Skipped Retrieval
+**Moderate Risk — 0.40–0.70**
 
-Explain:
-- The hallucination example from your test
-- Why it's worse than a casual chatbot failure
-- How it could have exposed the company to compliance risk
-- Why retrieval is mandatory, not optional
+Send a targeted email highlighting an underused service or a contract upgrade offer.
 
-[Write 2-3 paragraphs]
+### Clause 3
 
-#### Exactly What Was Passed to the LLM (Code Reference)
+**New Customer, Any Risk — Tenure < 3 months**
 
-Show:
-- The exact fields/values you passed
-- Where in the notebook demographic columns were excluded
-- Why this prevents both direct and implicit leakage
+Route the customer to the onboarding team instead of the standard retention flow.
 
-Example code snippet + explanation:
-```python
-user_message = f"""
-Customer ID: {customer_id}
-Churn Risk: {churn_probability:.2%}
-Tenure: {tenure} months
-Top 3 Features: {feature_1}, {feature_2}, {feature_3}  ← NAMES only, not values
-Applicable Clause: {clause_text}
-"""
-# Demographic columns DELIBERATELY EXCLUDED
-# This ensures audit trail is clean
-```
+### Clause 4
 
-[Write 1 paragraph explanation]
+**Non-Discrimination Rule**
+
+Retention explanations must never state or imply that gender, senior-citizen status, or family/partner status contributed to a customer's risk score.
+
+## Retrieval Priority
+
+For the selected test customer:
+
+* Predicted churn probability: **approximately 99.22%**
+* Tenure: **1 month**
+* Expected clause: **Clause 3**
+
+Clause 3 takes priority because the customer's tenure is below three months, regardless of the predicted risk probability.
 
 ---
 
-## APPENDIX: Code Locations
+# Part 7 — Task 6 LLM Context Control
 
-| Finding | Notebook Cell | File |
-|---|---|---|
-| Overall churn rate | 1.2 | 01_analysis.ipynb |
-| Churn by contract | 1.3 | 01_analysis.ipynb |
-| TotalCharges fix | 2.3 | 01_analysis.ipynb |
-| Feature importance | 4.1 | 01_analysis.ipynb |
-| Segmentation | 5.1-5.5 | 01_analysis.ipynb |
-| Retrieval logic | 6.3 | 01_analysis.ipynb |
-| Governance validator | 6.3 | src/retention_rag.py |
-| LLM with retrieval | 6.5 | 01_analysis.ipynb |
-| Hallucination test | 6.6 | 01_analysis.ipynb |
+The LLM is intended to receive only:
+
+1. Risk probability
+2. Tenure
+3. Retrieved playbook clause
+4. Three global feature-importance signal names
+
+The following are not passed to the LLM:
+
+* Customer ID
+* Full customer row
+* Raw demographic values
+* Other unnecessary customer attributes
+
+The purpose of this allowlist is to minimize unnecessary exposure of customer information and prevent protected demographic or family attributes from being used as retention explanations.
+
+## Prompt Governance
+
+The system prompt is designed to require the LLM to:
+
+* Use only the retrieved playbook clause and supplied inputs.
+* State the customer's risk probability and tenure.
+* Recommend only the action allowed by the retrieved clause.
+* Avoid inventing causes, customer facts, or unsupported explanations.
+* Never state or imply that gender, SeniorCitizen, Partner, Dependents, or other protected demographic/family attributes caused or contributed to the risk score.
+
+## Output Validation
+
+Generated output should be checked for prohibited demographic/family references before acceptance.
+
+The audit record should retain, where available:
+
+* Retrieved clause
+* Permitted input fields
+* Generated response
+* Validation result
 
 ---
 
-**Ready to convert to Word document and add to GitHub.**
+# Part 8 — Grounded vs Ungrounded LLM Test
+
+## Expected Clause
+
+For the selected test customer:
+
+**Expected clause: Clause 3**
+
+Reason:
+
+**Tenure = 1 month < 3 months**, so Clause 3 has priority over the high-risk clause.
+
+## Grounded LLM Call
+
+**Status: Pending assignment-approved LLM access.**
+
+The actual LLM response has not been fabricated.
+
+## Ungrounded LLM Call
+
+**Status: Pending assignment-approved LLM access.**
+
+The comparison call must be executed using the same assignment-approved provider after access is available.
+
+## Comparison Requirement
+
+The grounded call should be evaluated against the expected Clause 3 result.
+
+The ungrounded call should be compared with the expected result to determine whether omitting the playbook causes the model to guess, invent, or select an incorrect retention action.
+
+If an ungrounded call happens to produce the correct clause, it should be described as **correct in that run but ungrounded**, rather than automatically calling it a hallucination.
+
+---
+
+# Part 9 — Failure Mode and Governance Risk
+
+Without retrieval grounding, an LLM may generate a retention recommendation that is not supported by the approved playbook.
+
+Potential consequences include:
+
+* Incorrect customer action
+* Unsupported explanations
+* Compliance exposure
+* Inconsistent retention treatment
+* Loss of auditability
+
+This risk is particularly important in a retention setting because generated explanations can influence business decisions about customers.
+
+The deterministic retrieval step provides a controlled policy source, while input allowlisting and output validation provide additional governance controls.
+
+---
+
+# Part 10 — Monitoring and Cost Control
+
+## Monitoring
+
+The primary monitoring signal is the difference between predicted and observed churn rates by segment each month.
+
+Potential model drift should be investigated if this gap exceeds an agreed threshold, such as five percentage points, or if recall declines materially.
+
+## Cost Control
+
+The system can reduce LLM usage by:
+
+* Caching deterministic playbook retrieval.
+* Using the LLM only for short explanations.
+* Batching eligible requests.
+* Using an approved lower-cost model for simple standardized cases where appropriate.
+
+---
+
+# Task Completion Status
+
+| Task                                                   | Status                        |
+| ------------------------------------------------------ | ----------------------------- |
+| Task 1 — Exploratory churn analysis                    | ✅ Completed                   |
+| Task 2 — Data preparation                              | ✅ Completed                   |
+| Task 3 — Predictive modelling                          | ✅ Completed                   |
+| Task 4 — Feature importance                            | ✅ Completed                   |
+| Task 5 — Customer segmentation                         | ✅ Completed                   |
+| Task 6 — Deterministic retrieval and governance design | ✅ Completed                   |
+| Task 6 — Actual grounded LLM call                      | ⏳ Pending approved LLM access |
+| Task 6 — Actual ungrounded LLM call                    | ⏳ Pending approved LLM access |
+
+**Important:** No LLM response has been fabricated. The remaining LLM execution should only be marked complete after the assignment-approved provider is actually used and the exact outputs are recorded.
+
+---
+
+# Source Files
+
+* `notebooks/01_analysis.ipynb`
+* `src/data_processing.py`
+* `src/retention_rag.py`
+* `docs/MEMO.md`
+* `QUICKSTART.md`
+
