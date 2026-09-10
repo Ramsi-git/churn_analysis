@@ -31,7 +31,7 @@ churn_analysis/
 ### Part 2: Predictive Modelling & Business Segmentation
 - Clean data: Fix inconsistent `TotalCharges` column, handle missing values
 - * Governance Rule: Protected demographic/family variables (gender, SeniorCitizen, Partner, Dependents) are retained for model auditing but are not used as causal explanations or retention reasons.
-- Train and compare: Logistic Regression (baseline), Random Forest, Gradient Boosting
+- Train and compare: Logistic Regression (baseline), Random Forest
 - Evaluate with accuracy, recall, precision, and ROC-AUC
 - Identify overfitting: Compare train vs. test accuracy
 - Extract feature importance for actionable insights
@@ -114,13 +114,12 @@ Note: These are predictive signals from the Random Forest, not proof of causal e
 * Established, low-spend, low-risk - 1,208 customers, $3,352.68 expected monthly revenue at risk
 
 Recommended for first retention campaign: New, high-spend, high-risk. This segment combines a 76.40% average predicted churn risk with $79.14 average monthly charges and approximately $127,734.69 in expected monthly revenue at risk.
-**Recommended for first retention campaign**: Segment [#] - **[Name]**
-(Balances high risk with sufficient volume and revenue impact)
+
 
 ## 🔒 Governance & Compliance
 
 ### Non-Discrimination (Clause 4)
-- ✓ * ✓ Protected demographic/family variables are not used in LLM explanations or retention recommendations
+- ✓  Protected demographic/family variables are not used in LLM explanations or retention recommendations
 - ✓ LLM receives only: risk_probability, tenure_months, top_3_feature_names
 - ✓ LLM prompted to forbid demographic mentions
 - ✓ Validator checks LLM output for compliance
@@ -133,8 +132,7 @@ Every customer explanation includes:
 - LLM explanation (grounded in above, validated)
 
 ### Monitoring Signal
-After deployment, track: **[Your monitoring metric here]**
-Example: "Difference between predicted churn rate and actual churn rate by segment, monthly"
+After deployment, track: **Difference between predicted churn rate and actual churn rate by segment, monthly**, along with the model's recall and ROC-AUC on newly labeled outcomes.
 
 ### Cost Control
 For high-volume LLM explanations:
@@ -181,7 +179,7 @@ streamlit run streamlit_app.py
 1. **Data Privacy**: The dataset is real IBM Telco data. All analysis is academic/demonstration.
 2. **LLM Calls**: Requires OpenAI API key. Estimated cost: ~$0.10-0.50 for full analysis.
 3. **Generalization**: Train-test split is 80/20. Monitor accuracy gap for overfitting.
-4. **Non-Discrimination**: Demographic exclusion is MANDATORY, not optional. Code enforces this.
+4. **Non-Discrimination**: Protected demographic/family variables are not used as causal explanations or retention reasons. The LLM prompt and output validation prevent demographic attributes from being used in retention explanations.
 
 ## 🎓 Learning Outcomes
 
@@ -204,4 +202,4 @@ Refer to the "Analytical Questions" sections in the notebook for in-depth answer
 ---
 
 **Last Updated**: Sept 6, 2026  
-**Status**: Ready for analysis
+**Status**: Analysis and modelling completed; GenAI advisory execution pending approved LLM access and final executive memo validation.
