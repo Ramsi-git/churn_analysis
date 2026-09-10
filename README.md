@@ -1,200 +1,393 @@
 # Telecom Customer Churn Analysis & AI-Driven Retention Strategy
 
-A complete end-to-end data science project analyzing customer churn, building predictive models, and implementing a governance-aware GenAI advisory layer for the retention team.
+An end-to-end data science project analyzing telecom customer churn, building predictive models, segmenting customers by retention risk, and designing a governance-aware GenAI advisory layer for retention teams.
 
 ## 📋 Project Structure
 
-```
+```text
 churn_analysis/
 ├── notebooks/
-│   └── 01_analysis.ipynb          # Main analysis notebook (all 4 parts)
+│   └── 01_analysis.ipynb          # Main analysis notebook
 ├── src/
 │   ├── data_processing.py         # Data loading, cleaning, preprocessing
-│   └── retention_rag.py           # RAG module, playbook, governance validator
+│   └── retention_rag.py           # Retention playbook, retrieval, validation
 ├── data/
 │   └── [Dataset downloaded at runtime]
 ├── docs/
-│   ├── [Analysis charts and visualizations]
+│   ├── ANALYSIS_NOTES.md          # Detailed analysis and decisions
 │   └── MEMO.md                    # Executive memo
 ├── requirements.txt               # Python dependencies
-└── README.md                       # This file
+└── README.md                      # Project documentation
 ```
 
 ## 🎯 Project Overview
 
-### Part 1: Business Framing & Exploratory Analysis
-- Load and explore 7,043 customer records from IBM's Telco dataset
-- Compute overall churn rate and break down by Contract type and Internet Service
-- Analyze tenure-churn correlation
-- **Key insight**: Contract type is correlation, not causation (self-selection bias)
+This project uses the IBM Telco Customer Churn dataset to analyze customer churn, develop a churn prediction model, identify high-value/high-risk customer segments, and design a governance-aware retention advisory workflow.
 
-### Part 2: Predictive Modelling & Business Segmentation
-- Clean data: Fix inconsistent `TotalCharges` column, handle missing values
--  **Governance Rule**: Protected demographic/family variables (gender, SeniorCitizen, Partner, Dependents) are retained for model auditing but are not used as causal explanations or retention reasons.
-- Train and compare: Logistic Regression (baseline), Random Forest
-- Evaluate with accuracy, recall, precision, and ROC-AUC
-- Identify overfitting: Compare train vs. test accuracy
-- Extract feature importance for actionable insights
-- Segment customers into 3-4 clusters based on tenure, spend, and churn risk
+### Task 1: Business Framing & Exploratory Analysis
 
-### Part 3: GenAI Advisory Layer — Prompt Engineering & RAG
-- Build **retrieval-augmented generation (RAG)** advisor without vector DB
-- Implement exact retention playbook (4 clauses) with rule-based retrieval
-- **Clause 1** (High Risk ≥70%): Loyalty discount + 48-hour callback
-- **Clause 2** (Moderate Risk 40-70%): Targeted email + upgrade offer
-- **Clause 3** (New Customer <3 months): Route to onboarding team
-- **Clause 4** (Non-Discrimination): Never mention demographics
-- Prepare an LLM prompt using the retrieved clause, risk probability, tenure, and top 3 global feature-importance signals
-- Include an ungrounded comparison call to evaluate clause selection without playbook retrieval
-- Validate the LLM output for compliance when an approved LLM provider is available
+* Analyze 7,043 telecom customer records.
+* Calculate the overall churn rate.
+* Compare churn across Contract types and Internet Service categories.
+* Analyze the relationship between tenure and churn.
+* Treat observed relationships as correlations rather than causal effects because customer contract choices may involve self-selection.
 
-### Part 4: Governance, Monitoring, Cost & Board Memo
-- Executive one-page memo (no code, CFO-ready language)
-- Document key decisions and trade-offs
-- Recommend segment for retention campaign
-- Propose monitoring signal for model retraining
-- Outline governance proof for audit (non-discrimination enforcement)
-- Suggest cost control for high-volume LLM calls
+### Task 2: Data Preparation & Predictive Modelling
+
+* Clean the `TotalCharges` column.
+* Handle the 11 blank `TotalCharges` values associated with zero-tenure customers.
+* Remove `customerID` from modelling features.
+* Separate the target variable `Churn`.
+* Encode categorical variables using one-hot encoding.
+* Standardize numerical variables.
+* Fit preprocessing on the training data and transform the test data separately to avoid data leakage.
+* Compare Logistic Regression as a baseline with Random Forest.
+* Evaluate models using accuracy, precision, recall, F1-score, and ROC-AUC.
+* Compare training and test performance to identify generalization risk.
+* Select the Random Forest model using 5-fold training cross-validation F1-score.
+
+### Task 3: Feature Importance & Customer Segmentation
+
+* Extract global Random Forest feature-importance signals.
+* Identify the top three predictive signals for business action.
+* Segment customers into four groups using tenure, MonthlyCharges, and predicted churn probability.
+* Estimate expected monthly revenue at risk for each segment.
+* Prioritize the segment with the greatest combination of churn risk and revenue exposure.
+
+### Task 4: Governance-Aware GenAI Advisory Layer
+
+* Implement a rule-based retention playbook with four approved clauses.
+* Retrieve the applicable clause using risk probability and tenure.
+* Give Clause 3 priority when tenure is below three months.
+* Prepare a constrained LLM prompt using only approved information.
+* Prevent demographic attributes from being used as retention explanations.
+* Validate generated responses for governance compliance when an assignment-approved LLM provider is available.
+* Compare the grounded workflow with an ungrounded clause-selection call.
+
+### Task 5: Monitoring, Cost Control & Executive Communication
+
+* Prepare an executive-facing retention recommendation.
+* Define a model monitoring signal for future retraining decisions.
+* Document governance and audit controls.
+* Recommend cost-control measures for high-volume LLM usage.
+* Communicate technical results in business-oriented language.
 
 ## 🚀 Quick Start
 
 ### 1. Install Dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### 2. Configure an Assignment-Approved LLM Provider
 
-Task 6 requires an assignment-approved generative LLM provider. Configure the provider credential securely through an environment variable or approved local runtime. Do not hard-code or commit credentials to the repository.
+Task 6 requires an assignment-approved generative LLM provider.
 
-If no approved LLM provider is available, the analysis, modelling, retrieval logic, prompt design, and governance controls can still be reviewed, but the final LLM execution remains pending.
+Configure the approved provider securely through an environment variable or approved local runtime. Never hard-code or commit API credentials to the repository.
+
+If an approved LLM provider is not available, the following components can still be reviewed and evaluated:
+
+* Data cleaning
+* Exploratory analysis
+* Predictive modelling
+* Feature importance
+* Customer segmentation
+* Rule-based retrieval
+* Prompt design
+* Governance controls
+
+The actual grounded and ungrounded LLM executions remain pending until approved LLM access is available.
+
 ### 3. Run the Analysis
-Open `notebooks/01_analysis.ipynb` in Jupyter and run cells in order.
 
-The notebook will:
-- Download data from GitHub
-- Execute all 4 parts
-- Save visualizations to `docs/`
-- Generate text outputs for memo
+Open:
 
-## 📊 Key Findings (Your Numbers)
+```text
+notebooks/01_analysis.ipynb
+```
 
-### Part 1: KPI & Correlation
--  Overall churn rate: 26.54%
-- Month-to-month churn: 42.71%
-- 1-year contract churn: 11.27%
-- 2-year contract churn: 2.83%
+and run the notebook cells in order.
 
-### Part 2: Model Performance
--  Best model: Random Forest
-- Test set accuracy: 76.15%
-- Test set recall: 71.12% (critical for identifying churners)
-- Train vs. test accuracy gap: 14.99 percentage points (indicates overfitting/generalization risk)
-- Test set ROC-AUC: 0.832
+The notebook performs the analysis, modelling, segmentation, feature-importance analysis, and retention-advisory preparation.
 
-### Part 3: Feature Importance
+## 📊 Key Findings
 
-Top 3 global model feature-importance signals:
+### Business KPIs
 
-1. Tenure → Prioritize customers in their first 12 months for proactive retention check-ins and an annual-contract offer before renewal.
-2. TotalCharges → Prioritize high-value customers for tailored loyalty outreach and retention offers.
-3. Month-to-month contract → Offer eligible month-to-month customers a time-limited annual-contract discount or fee waiver.
+| Metric                        | Result |
+| ----------------------------- | -----: |
+| Overall churn rate            | 26.54% |
+| Month-to-month contract churn | 42.71% |
+| One-year contract churn       | 11.27% |
+| Two-year contract churn       |  2.83% |
+| Tenure-churn correlation      | -0.352 |
 
-Note: These are predictive signals from the Random Forest, not proof of causal effects.
+The contract-level churn differences are treated as correlations rather than proof that contract type itself causes churn.
 
-### Part 4: Customer Segments
+### Model Performance
 
-* New, high-spend, high-risk - 2,111 customers, $127,734.69 expected monthly revenue at risk
-* Established, high-spend, low-risk - 1,995 customers, $43,540.39 expected monthly revenue at risk
-* New, low-spend, high-risk - 1,729 customers, $17,097.02 expected monthly revenue at risk
-* Established, low-spend, low-risk - 1,208 customers, $3,352.68 expected monthly revenue at risk
+The Random Forest was selected using 5-fold training cross-validation F1-score.
 
-Recommended for first retention campaign: New, high-spend, high-risk. This segment combines a 76.40% average predicted churn risk with $79.14 average monthly charges and approximately $127,734.69 in expected monthly revenue at risk.
+| Metric                  |           Random Forest |
+| ----------------------- | ----------------------: |
+| Test accuracy           |                  76.15% |
+| Test precision          |                  53.85% |
+| Test recall             |                  71.12% |
+| Test F1-score           |                  61.29% |
+| Test ROC-AUC            |                   0.832 |
+| Train accuracy          |                  91.14% |
+| Train-test accuracy gap | 14.99 percentage points |
 
+The 14.99 percentage-point training/test accuracy gap indicates a generalization risk that should be monitored after deployment.
+
+For comparison, Logistic Regression achieved 80.62% test accuracy, 60.61% F1-score, and 0.842 ROC-AUC. The Random Forest was selected because model selection was based on training cross-validation F1-score rather than test-set ROC-AUC alone.
+
+## 🔎 Top 3 Global Model Feature-Importance Signals
+
+The following are **global predictive signals from the Random Forest**, not customer-specific causal explanations.
+
+1. **Tenure**
+   Prioritize customers during their first 12 months for proactive retention check-ins and an annual-contract offer before renewal.
+
+2. **TotalCharges**
+   Prioritize high-value customers for tailored loyalty outreach and retention offers.
+
+3. **Month-to-month contract**
+   Offer eligible month-to-month customers a time-limited annual-contract discount or fee waiver.
+
+These feature-importance signals indicate predictive relevance in the trained model. They should not be interpreted as proof that changing a feature will directly cause churn to decrease.
+
+## 👥 Customer Segmentation
+
+Four customer segments were created using:
+
+* Tenure
+* MonthlyCharges
+* Predicted churn probability
+
+| Segment                           | Customers | Avg. Tenure | Avg. Monthly Charges | Avg. Churn Risk | Expected Monthly Revenue at Risk |
+| --------------------------------- | --------: | ----------: | -------------------: | --------------: | -------------------------------: |
+| New, high-spend, high-risk        |     2,111 | 13.6 months |               $79.14 |          76.40% |                      $127,734.69 |
+| Established, high-spend, low-risk |     1,995 | 56.4 months |               $92.48 |          22.89% |                       $43,540.39 |
+| New, low-spend, high-risk         |     1,729 | 12.5 months |               $36.10 |          26.86% |                       $17,097.02 |
+| Established, low-spend, low-risk  |     1,208 | 54.1 months |               $34.89 |           6.65% |                        $3,352.68 |
+
+### Recommended First Retention Campaign
+
+**New, high-spend, high-risk customers** are the recommended first target.
+
+This segment has:
+
+* 2,111 customers
+* 76.40% average predicted churn risk
+* $79.14 average monthly charges
+* Approximately $127,734.69 expected monthly revenue at risk
+
+This provides the strongest combination of predicted churn exposure and potential revenue impact among the four segments.
+
+## 🤖 Retention Advisory & RAG Logic
+
+The retention advisory uses a simple rule-based retrieval approach rather than a vector database.
+
+### Retention Playbook
+
+**Clause 1 — High Risk (probability ≥ 0.70):**
+Offer a loyalty discount and a callback from a retention specialist within 48 hours.
+
+**Clause 2 — Moderate Risk (0.40–0.70):**
+Send a targeted email highlighting an underused service or a contract upgrade offer.
+
+**Clause 3 — New Customer, Any Risk, Tenure < 3 months:**
+Route to the onboarding team instead of the standard retention flow.
+
+**Clause 4 — Non-Discrimination Rule:**
+Retention explanations must never state or imply that gender, senior-citizen status, or family/partner status contributed to a customer's risk score, even where a statistical correlation exists in the data.
+
+### Retrieval Priority
+
+If a customer's tenure is below three months, **Clause 3 takes priority**, regardless of the customer's predicted churn probability.
+
+For the flagged customer used in Task 6:
+
+* Predicted churn risk: approximately **99.22%**
+* Tenure: **1 month**
+* Expected clause: **Clause 3**
+
+The deterministic retrieval result is therefore:
+
+> Route the customer to the onboarding team instead of the standard retention flow.
 
 ## 🔒 Governance & Compliance
 
-### Non-Discrimination (Clause 4)
-- ✓  Protected demographic/family variables are not used in LLM explanations or retention recommendations
-- ✓ ✓ LLM receives only: risk_probability, tenure_months, retrieved_clause, and top_3_feature_names
-- ✓ LLM prompted to forbid demographic mentions
-- ✓ Validator is designed to check LLM output for compliance when an approved provider is available
+### Non-Discrimination Controls
+
+The retention advisory is designed to prevent demographic attributes from becoming retention explanations or recommendations.
+
+The LLM input is restricted to:
+
+* `risk_probability`
+* `tenure_months`
+* Retrieved retention clause
+* Top three global feature-importance names
+
+The LLM is **not provided with**:
+
+* `customerID`
+* The customer's full dataset row
+* Raw demographic attributes
+* Gender
+* SeniorCitizen
+* Partner
+* Dependents
+
+The system prompt also prohibits the model from stating or implying that protected demographic/family attributes contributed to the customer's risk.
+
+### Output Validation
+
+Generated responses should be validated before being used by a retention team.
+
+The validation layer is designed to check that the response:
+
+* Follows the retrieved playbook clause.
+* Includes the required risk probability and tenure.
+* Does not introduce unsupported customer facts.
+* Does not mention prohibited demographic/family attributes.
+* Does not invent a cause for the customer's predicted churn.
+
 ### Audit Trail
-The planned customer explanation includes:
-- Risk probability (numeric, defensible)
-- Top 3 global model feature-importance signals (non-demographic retention signals)
-- Retrieved clause (approved, standardized text)
-- LLM explanation (grounded in above, validated)
 
-### Monitoring Signal
-After deployment, track: **Difference between predicted churn rate and actual churn rate by segment, monthly**, along with the model's recall and ROC-AUC on newly labeled outcomes.
+A compliant advisory record should contain:
 
-### Cost Control
-For high-volume LLM explanations:
-- **Design change**: Cache retrieved clauses (same for all high-risk customers)
-- Batch requests where possible
-- Use an approved lower-cost LLM for simple, standardized clauses where appropriate
-- Monitor token usage per segment
+* Risk probability
+* Tenure
+* Retrieved clause
+* Top three global feature-importance signals
+* Generated LLM explanation
+* Validation result
 
-## 📝 Files in This Project
+This creates an auditable record of the information used to generate the recommendation.
 
-| File | Purpose |
-|------|---------|
-| `notebooks/01_analysis.ipynb` | Complete Jupyter notebook with all 4 parts |
-| `src/data_processing.py` | DataProcessing class: load, clean, preprocess data |
-| `src/retention_rag.py` | Playbook, Retriever, Validator, Advisor classes |
-| `docs/MEMO.md` | One-page executive memo (required deliverable) |
-| `requirements.txt` | Python package dependencies |
-| `.gitignore` | Ignore data files and secrets |
+## 🧪 Task 6 LLM Execution Status
 
-## 🔧 Optional: Bonus Streamlit App
+The deterministic part of Task 6 has been completed.
 
-To build the optional bonus app (Task 6 wrapper in Streamlit):
+For the selected test customer:
 
-```bash
-pip install streamlit
-
-# Create app file
-cat > streamlit_app.py << 'EOF'
-import streamlit as st
-# [See bonus section in notebook or notes doc]
-EOF
-
-streamlit run streamlit_app.py
+```text
+Risk probability: approximately 99.22%
+Tenure: 1 month
+Expected clause: Clause 3
 ```
 
-## 📖 Documentation
+The actual grounded LLM call and the ungrounded comparison call have **not been fabricated**.
 
-- **MEMO.md**: Executive one-pager with headline KPI, segment recommendation, monitoring plan, governance statement, cost strategy
-- **Notebook cells**: Each part includes "Analytical Questions" with detailed answers
-- **Code comments**: Governance decisions flagged with explicit reasoning
+They remain pending until an assignment-approved generative LLM provider is available.
+
+If an approved provider becomes available, the required workflow is:
+
+1. Calculate the expected clause first.
+2. Run the grounded call using the retrieved clause.
+3. Record the exact LLM response.
+4. Run the ungrounded comparison call without the playbook.
+5. Record the exact response.
+6. Compare the ungrounded response with the expected clause.
+7. Validate the grounded response for governance compliance.
+
+If the ungrounded call happens to identify Clause 3 correctly, it should be recorded as **correct in that run but ungrounded**, not automatically classified as hallucination.
+
+## 📈 Monitoring Signal
+
+After deployment, monitor the:
+
+**Difference between predicted churn rate and actual churn rate by customer segment, monthly.**
+
+Additional model-performance monitoring should include:
+
+* Recall
+* ROC-AUC
+* F1-score
+* Train/test performance gap
+* Segment-level performance
+
+A sustained deterioration in prediction quality can trigger model review or retraining.
+
+## 💰 Cost Control
+
+For high-volume LLM advisory generation:
+
+* Cache the retrieved retention clauses because the same approved clause can apply to many customers.
+* Batch requests where supported.
+* Use an approved lower-cost model for simple, standardized advisory tasks where appropriate.
+* Monitor token usage and LLM cost by segment.
+* Restrict LLM calls to cases where a generated explanation provides additional business value.
+
+## 📝 Project Files
+
+| File                          | Purpose                                             |
+| ----------------------------- | --------------------------------------------------- |
+| `notebooks/01_analysis.ipynb` | Main analysis notebook                              |
+| `src/data_processing.py`      | Data loading, cleaning and preprocessing            |
+| `src/retention_rag.py`        | Retention playbook, retrieval and validation logic  |
+| `docs/ANALYSIS_NOTES.md`      | Detailed analysis, results and governance decisions |
+| `docs/MEMO.md`                | Executive one-page memo                             |
+| `requirements.txt`            | Python dependencies                                 |
+| `.gitignore`                  | Ignore data files and secrets                       |
 
 ## ⚠️ Important Notes
 
-1. **Data Privacy**: The dataset is real IBM Telco data. All analysis is academic/demonstration.
-2. **LLM Calls**: GenAI advisory execution requires an assignment-approved LLM provider or local generative model. No API credentials are stored in this repository.
-3. **Generalization**: Train-test split is 80/20. Monitor accuracy gap for overfitting.
-4. **Non-Discrimination**: Protected demographic/family variables are not used as causal explanations or retention reasons. The LLM prompt and output validation prevent demographic attributes from being used in retention explanations.
+1. **Dataset:** The project uses the IBM Telco Customer Churn dataset for academic/demonstration purposes.
+2. **LLM access:** No API credentials are stored in the repository.
+3. **Data leakage:** Preprocessing is fitted on training data before transforming the test data.
+4. **Generalization:** The Random Forest has a 14.99 percentage-point train/test accuracy gap, so post-deployment monitoring is important.
+5. **Governance:** Protected demographic/family attributes are not used as causal explanations or retention reasons.
+6. **LLM privacy:** The advisory layer receives only the approved allowlisted information rather than the customer's complete record.
+7. **LLM execution:** Grounded and ungrounded LLM outputs are pending assignment-approved LLM access and are not fabricated in this documentation.
 
 ## 🎓 Learning Outcomes
 
-After completing this project, you will understand:
-- End-to-end ML pipeline: EDA → Modeling → Segmentation → Advisory design
-- How to handle minority class imbalance (high recall = catch churners)
-- RAG without vector DB (simple rule-based retrieval is often sufficient)
-- Protected demographic/family variables are not used as causal explanations or retention reasons.
-- How to communicate data science to executives (metrics, trade-offs, risks)
+This project demonstrates understanding of:
 
-## 📞 Questions?
+* End-to-end data science workflow
+* Exploratory data analysis
+* Data cleaning and preprocessing
+* Classification modelling
+* Class-imbalance considerations
+* Cross-validation and model selection
+* Model generalization and overfitting
+* Feature-importance analysis
+* Customer segmentation using KMeans
+* Rule-based retrieval / RAG concepts
+* Prompt governance
+* Non-discrimination controls
+* LLM output validation
+* Model monitoring
+* Cost control for high-volume AI workflows
+* Executive communication of technical findings
 
-Refer to the "Analytical Questions" sections in the notebook for in-depth answers:
-- **Part 1**: Why is contract type correlation, not causation?
-- **Part 2A**: Why accuracy alone is misleading for minority classes
-- **Part 2B**: How to diagnose overfitting
-- **Part 3A**: What hallucination looks like and why it's worse in compliance contexts
-- **Part 3B**: How demographic data leakage happens and how to prevent it
+## 📖 Documentation
+
+For additional details, refer to:
+
+* **`docs/ANALYSIS_NOTES.md`** — detailed analysis, modelling decisions, feature importance, segmentation, Task 6 governance, and execution status.
+* **`docs/MEMO.md`** — executive one-page summary.
+* **`notebooks/01_analysis.ipynb`** — analysis and modelling implementation.
+* **`src/retention_rag.py`** — retention playbook and advisory logic.
+
+## 📞 Analytical Questions
+
+The notebook and analysis notes address questions including:
+
+* Why is contract type correlation rather than proof of causation?
+* Why can accuracy be misleading for churn prediction?
+* How can train/test performance reveal overfitting?
+* What does an ungrounded LLM response demonstrate?
+* Why is ungrounded generation more risky in a compliance-sensitive retention workflow?
+* How can demographic data leakage be prevented?
+* How should churn models and segments be monitored after deployment?
 
 ---
 
-**Last Updated**: Sept 6, 2026  
-**Status**: Analysis and modelling completed; GenAI advisory execution pending approved LLM access and final executive memo validation.
+**Last Updated:** September 6, 2026
+**Status:** Analysis and modelling completed; deterministic retention retrieval completed; grounded and ungrounded GenAI execution pending assignment-approved LLM access.
+
