@@ -47,16 +47,17 @@ Random Forest was selected using 5-fold training cross-validation F1, rather tha
 
 The 14.99 percentage-point train-test accuracy gap indicates a meaningful generalization risk and should be monitored before production deployment.
 
-| Segment	| Business profile	| Customers	| Avg. tenure	| Avg. monthly charges	|Avg. churn risk	| Revenue at risk |
-| 0	| New, high-spend, high-risk	| 2,111	| 13.6 mo	| $79.14	| 76.40%	| $127,734.69 |
-| 1	| Established, high-spend, low-risk	| 1,995	56.4 mo	| $92.48	| 22.89%	| $43,540.39 |
-| 2	| New, low-spend, high-risk	| 1,729	12.5 mo	| $36.10	| 26.86%	| $17,097.02 |
-| 3	| Established, low-spend, low-risk	| 1,208	| 54.1 mo	| $34.89	| 6.65%	| $3,352.68 |
+| Segment | Business profile | Customers | Avg. tenure | Avg. monthly charges | Avg. churn risk | Revenue at risk |
+|---|---|---:|---:|---:|---:|---:|
+| 0 | New, high-spend, high-risk | 2,111 | 13.6 mo | $79.14 | 76.40% | $127,734.69 |
+| 1 | Established, high-spend, low-risk | 1,995 | 56.4 mo | $92.48 | 22.89% | $43,540.39 |
+| 2 | New, low-spend, high-risk | 1,729 | 12.5 mo | $36.10 | 26.86% | $17,097.02 |
+| 3 | Established, low-spend, low-risk | 1,208 | 54.1 mo | $34.89 | 6.65% | $3,352.68 |
 
 Recommended target: Segment 0 - New, high-spend, high-risk
 This segment combines high predicted churn risk with the largest expected monthly revenue at risk, making it the strongest starting point for a targeted retention campaign.
 
-Global Model Signals
+## Global Model Signals
 
 The Random Forest's top three global feature-importance signals are:
 
@@ -80,14 +81,14 @@ Retrieval is mandatory. Without the playbook, an LLM may guess a clause or inven
 
 The GenAI advisory layer is designed to enforce Clause 4 through controlled inputs and output validation.
 
-1.The LLM receives only the risk probability, tenure, retrieved clause, and top three global feature-importance signal names.
-2.Customer IDs, raw demographic values, and full customer rows are not passed to the LLM.
-3.The prompt explicitly prohibits demographic/family attributes from being used as explanations or retention reasons.
-4.Generated text is checked for prohibited demographic references before it is accepted when an approved LLM provider is available.
-5.The retrieved clause, permitted inputs, generated response, and validation result can be retained as an audit record.
+1. The LLM receives only the risk probability, tenure, retrieved clause, and top three global feature-importance signal names.
+2. Customer IDs, raw demographic values, and full customer rows are not passed to the LLM.
+3. The prompt explicitly prohibits demographic/family attributes from being used as explanations or retention reasons.
+4. Generated text is checked for prohibited demographic references before it is accepted when an approved LLM provider is available.
+5. The retrieved clause, permitted inputs, generated response, and validation result can be retained as an audit record.
 The compliance claim for production should be supported by logs showing the input-field allowlist, retrieved clause, validator result, and any rejected output.
 
-Monitoring and Cost Control
+## Monitoring and Cost Control
 
 Primary monitoring signal: Track the difference between predicted and observed churn rates by segment each month. Investigate potential model drift and consider retraining when the gap exceeds an agreed threshold, such as five percentage points, or when recall declines materially.
 
