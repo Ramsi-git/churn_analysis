@@ -116,7 +116,7 @@ Recommended for first retention campaign: New, high-spend, high-risk. This segme
 
 ### Non-Discrimination (Clause 4)
 - ✓  Protected demographic/family variables are not used in LLM explanations or retention recommendations
-- ✓ LLM receives only: risk_probability, tenure_months, retrieved_clause, and top_3_feature_names
+- ✓ ✓ LLM receives only: risk_probability, tenure_months, retrieved_clause, and top_3_feature_names
 - ✓ LLM prompted to forbid demographic mentions
 - ✓ Validator is designed to check LLM output for compliance when an approved provider is available
 ### Audit Trail
