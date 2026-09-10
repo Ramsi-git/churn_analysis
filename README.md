@@ -30,7 +30,7 @@ churn_analysis/
 
 ### Part 2: Predictive Modelling & Business Segmentation
 - Clean data: Fix inconsistent `TotalCharges` column, handle missing values
-- * Governance Rule: Protected demographic/family variables (gender, SeniorCitizen, Partner, Dependents) are retained for model auditing but are not used as causal explanations or retention reasons.
+-  **Governance Rule**: Protected demographic/family variables (gender, SeniorCitizen, Partner, Dependents) are retained for model auditing but are not used as causal explanations or retention reasons.
 - Train and compare: Logistic Regression (baseline), Random Forest
 - Evaluate with accuracy, recall, precision, and ROC-AUC
 - Identify overfitting: Compare train vs. test accuracy
@@ -44,9 +44,9 @@ churn_analysis/
 - **Clause 2** (Moderate Risk 40-70%): Targeted email + upgrade offer
 - **Clause 3** (New Customer <3 months): Route to onboarding team
 - **Clause 4** (Non-Discrimination): Never mention demographics
-- Call LLM with retrieved clause + top 3 features (governance-safe)
-- Demonstrate hallucination without retrieval
-- Validate LLM output for compliance
+- Prepare an LLM prompt using the retrieved clause, risk probability, tenure, and top 3 global feature-importance signals
+- Include an ungrounded comparison call to evaluate clause selection without playbook retrieval
+- Validate the LLM output for compliance when an approved LLM provider is available
 
 ### Part 4: Governance, Monitoring, Cost & Board Memo
 - Executive one-page memo (no code, CFO-ready language)
@@ -125,7 +125,7 @@ Recommended for first retention campaign: New, high-spend, high-risk. This segme
 - ✓ Validator checks LLM output for compliance
 
 ### Audit Trail
-Every customer explanation includes:
+The planned customer explanation includes:
 - Risk probability (numeric, defensible)
 - Top 3 business drivers (service/contract/engagement, not demographics)
 - Retrieved clause (approved, standardized text)
@@ -138,7 +138,7 @@ After deployment, track: **Difference between predicted churn rate and actual ch
 For high-volume LLM explanations:
 - **Design change**: Cache retrieved clauses (same for all high-risk customers)
 - Batch requests where possible
-- Use cheaper model (GPT-3.5 instead of GPT-4) for simple clauses
+- Use an approved lower-cost LLM for simple, standardized clauses where appropriate
 - Monitor token usage per segment
 
 ## 📝 Files in This Project
