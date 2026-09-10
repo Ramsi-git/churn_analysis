@@ -30,7 +30,7 @@ churn_analysis/
 
 ### Part 2: Predictive Modelling & Business Segmentation
 - Clean data: Fix inconsistent `TotalCharges` column, handle missing values
-- **Governance Rule**: Exclude protected demographic columns (gender, SeniorCitizen, Partner, Dependents) from model features
+- * Governance Rule: Protected demographic/family variables (gender, SeniorCitizen, Partner, Dependents) are retained for model auditing but are not used as causal explanations or retention reasons.
 - Train and compare: Logistic Regression (baseline), Random Forest, Gradient Boosting
 - Evaluate with accuracy, recall, precision, and ROC-AUC
 - Identify overfitting: Compare train vs. test accuracy
@@ -84,35 +84,43 @@ The notebook will:
 ## 📊 Key Findings (Your Numbers)
 
 ### Part 1: KPI & Correlation
-- Overall churn rate: **[Fill in after running]**%
-- Month-to-month churn: **[Fill in]**%
-- 1-year contract churn: **[Fill in]**%
-- Correlation insight: Self-selection bias (committed customers chose commitment)
+-  Overall churn rate: 26.54%
+- Month-to-month churn: 42.71%
+- 1-year contract churn: 11.27%
+- 2-year contract churn: 2.83%
 
 ### Part 2: Model Performance
-- Best model: **[Logistic Regression / Random Forest / Gradient Boosting]**
-- Test set accuracy: **[Fill in]**%
-- Test set recall: **[Fill in]**% (critical for identifying churners)
-- Train vs. test gap: **[Fill in]**% (indicates generalization)
+-  Best model: Random Forest
+- Test set accuracy: 76.15%
+- Test set recall: 71.12% (critical for identifying churners)
+- Train vs. test accuracy gap: 14.99 percentage points (indicates overfitting/generalization risk)
+- Test set ROC-AUC: 0.832
 
 ### Part 3: Feature Importance
-Top 3 features driving churn:
-1. **[Feature name]** → **Action**: [Specific retention tactic]
-2. **[Feature name]** → **Action**: [Specific retention tactic]
-3. **[Feature name]** → **Action**: [Specific retention tactic]
+
+Top 3 global model feature-importance signals:
+
+1. Tenure → Prioritize customers in their first 12 months for proactive retention check-ins and an annual-contract offer before renewal.
+2. TotalCharges → Prioritize high-value customers for tailored loyalty outreach and retention offers.
+3. Month-to-month contract → Offer eligible month-to-month customers a time-limited annual-contract discount or fee waiver.
+
+Note: These are predictive signals from the Random Forest, not proof of causal effects.
 
 ### Part 4: Customer Segments
-- Segment 0: **[Name]** - [Count] customers, $[Revenue at risk]
-- Segment 1: **[Name]** - [Count] customers, $[Revenue at risk]
-- Segment 2: **[Name]** - [Count] customers, $[Revenue at risk]
 
+* New, high-spend, high-risk - 2,111 customers, $127,734.69 expected monthly revenue at risk
+* Established, high-spend, low-risk - 1,995 customers, $43,540.39 expected monthly revenue at risk
+* New, low-spend, high-risk - 1,729 customers, $17,097.02 expected monthly revenue at risk
+* Established, low-spend, low-risk - 1,208 customers, $3,352.68 expected monthly revenue at risk
+
+Recommended for first retention campaign: New, high-spend, high-risk. This segment combines a 76.40% average predicted churn risk with $79.14 average monthly charges and approximately $127,734.69 in expected monthly revenue at risk.
 **Recommended for first retention campaign**: Segment [#] - **[Name]**
 (Balances high risk with sufficient volume and revenue impact)
 
 ## 🔒 Governance & Compliance
 
 ### Non-Discrimination (Clause 4)
-- ✓ Demographic columns excluded from model training
+- ✓ * ✓ Protected demographic/family variables are not used in LLM explanations or retention recommendations
 - ✓ LLM receives only: risk_probability, tenure_months, top_3_feature_names
 - ✓ LLM prompted to forbid demographic mentions
 - ✓ Validator checks LLM output for compliance
