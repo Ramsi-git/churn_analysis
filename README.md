@@ -3,7 +3,7 @@
 An end-to-end data science project analyzing telecom customer churn, building predictive models, segmenting customers by retention risk, and designing a governance-aware GenAI advisory layer for retention teams.
 
 ## 📋 Project Structure
-
+ 
 ```text
 churn_analysis/
 ├── notebooks/
